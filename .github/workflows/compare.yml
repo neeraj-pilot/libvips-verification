@@ -1,0 +1,51 @@
+name: Compare previous release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            binary: vips-x64
+          - runner: ubuntu-24.04-arm
+            binary: vips-arm64
+          - runner: windows-2025
+            binary: vips-x86_64.exe
+          - runner: windows-11-arm
+            binary: vips-aarch64.exe
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download both versions
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BINARY_NAME: ${{ matrix.binary }}
+        run: |
+          gh release download v8.16.0 --repo ente/libvips-packaging --pattern "$BINARY_NAME" --dir old
+          for attempt in {1..40}; do
+            names=$(gh api repos/ente/libvips-packaging/actions/runs/36383895870/artifacts --jq '.artifacts[].name')
+            if grep -Fxq "$BINARY_NAME" <<< "$names"; then
+              gh run download 36383895870 --repo ente/libvips-packaging --name "$BINARY_NAME" --dir new
+              exit 0
+            fi
+            sleep 30
+          done
+          exit 1
+      - name: Compare RAW and Ultra HDR
+        run: python compare.py old/${{ matrix.binary }} new/${{ matrix.binary }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: comparison-${{ matrix.binary }}
+          path: comparison/
+          if-no-files-found: error

@@ -2,3 +2,6 @@ binaries/
 inputs/
 results/
 __pycache__/
+comparison/
+old/
+new/
