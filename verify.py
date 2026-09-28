@@ -85,10 +85,14 @@ def record(name, test):
     print(json.dumps(entry), flush=True)
 
 
-def convert(source, name, hdr):
+def convert(source, name, hdr, reference=None):
     destination = output / f"{name}.jpeg"
     vips("copy", source, destination)
     info = check_jpeg(destination)
+    if reference:
+        assert dimensions(destination) == dimensions(reference), (
+            "temporary input decoded a different-sized image",
+            dimensions(destination), dimensions(reference))
     if hdr:
         info.update(check_hdr(destination))
     return info
@@ -139,7 +143,9 @@ for fixture in json.loads(Path("fixtures.json").read_text()):
     temporary = inputs / "temporary-input"
     shutil.copyfile(source, temporary)
     record(f"{name}: conversion from extensionless temporary file",
-           lambda: convert(temporary, name + "-temporary", hdr))
+           lambda: convert(temporary, name + "-temporary", hdr,
+                           output / f"{name}.jpeg"
+                           if fixture["kind"] == "raw" else None))
     record(f"{name}: thumbnail from extensionless temporary file",
            lambda: thumbnail(temporary, name + "-temporary", hdr))
 
