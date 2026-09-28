@@ -98,13 +98,18 @@ def convert(source, name, hdr, reference=None):
     return info
 
 
-def thumbnail(source, name, hdr):
+def thumbnail(source, name, hdr, reference=None):
     info = {}
     for quality in (70, 60):
         destination = output / f"{name}-q{quality}.jpeg"
         vips("thumbnail", source, f"{destination}[Q={quality}]", 720,
              "--size", "down")
         current = check_jpeg(destination, thumbnail=True)
+        if reference:
+            expected = output / f"{reference}-q{quality}.jpeg"
+            assert dimensions(destination) == dimensions(expected), (
+                "temporary input returned a different-sized thumbnail",
+                dimensions(destination), dimensions(expected))
         if hdr:
             current.update(check_hdr(destination))
         info[f"q{quality}"] = current
@@ -147,7 +152,7 @@ for fixture in json.loads(Path("fixtures.json").read_text()):
                            output / f"{name}.jpeg"
                            if fixture["kind"] == "raw" else None))
     record(f"{name}: thumbnail from extensionless temporary file",
-           lambda: thumbnail(temporary, name + "-temporary", hdr))
+           lambda: thumbnail(temporary, name + "-temporary", hdr, name))
 
 (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
 summary = ["| Check | Result |", "| --- | --- |"]
