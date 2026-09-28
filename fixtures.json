@@ -2,8 +2,8 @@
   {
     "name": "canon.cr2",
     "kind": "raw",
-    "url": "https://raw.githubusercontent.com/letmaik/rawpy/a39c2e7a44911889c3360891012f862f904ba551/test/M0054341_01_00005.cr2",
-    "sha256": "add8183e643d98d5b07479d50bf5591838451d43449fd3399e2f146cf19beb8d"
+    "url": "https://raw.githubusercontent.com/letmaik/rawpy/a39c2e7a44911889c3360891012f862f904ba551/test/RAW_CANON_5DMARK2_PREPROD.CR2",
+    "sha256": "0da28f6f2718ea82fdf95c35a1790597a3a7ecbe328a3f5b60a05f4e95e380e6"
   },
   {
     "name": "nikon.nef",
