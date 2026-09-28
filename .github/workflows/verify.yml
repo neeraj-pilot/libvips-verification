@@ -22,13 +22,24 @@ jobs:
           - runner: windows-11-arm
             binary: vips-aarch64.exe
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Download exact tag artifact
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh run download 36383895870 --repo ente/libvips-packaging --name ${{ matrix.binary }} --dir binaries
+          BINARY_NAME: ${{ matrix.binary }}
+        run: |
+          for attempt in {1..40}; do
+            names=$(gh api repos/ente/libvips-packaging/actions/runs/36383895870/artifacts --jq '.artifacts[].name')
+            if grep -Fxq "$BINARY_NAME" <<< "$names"; then
+              gh run download 36383895870 --repo ente/libvips-packaging --name "$BINARY_NAME" --dir binaries
+              exit 0
+            fi
+            sleep 30
+          done
+          exit 1
       - name: Exercise conversion and thumbnails
         run: python verify.py binaries/${{ matrix.binary }}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
